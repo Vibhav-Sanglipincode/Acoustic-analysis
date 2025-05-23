@@ -1,0 +1,42 @@
+# Read data
+setwd("C:/Users/vibha/OneDrive/Desktop/Final plots")
+owlet <- read.csv("C:/Users/vibha/Downloads/motif D.csv")
+# Clean column names
+colnames(owlet) <- trimws(colnames(owlet))
+# Check if Subspecies column exists
+if (!"Subspecie" %in% colnames(owlet)) {
+  stop("Column 'Subspecie' not found in the dataset.")
+}
+# Convert Subspecies to factor
+owlet$Subspecie <- as.factor(owlet$Subspecie)
+# Select numeric columns (adjust column indices if needed)
+Stats_numeric <- owlet[, 3:10]
+Stats_numeric <- data.frame(lapply(Stats_numeric, function(x) as.numeric(as.character(x))))
+Stats_numeric$Subspecie <- owlet$Subspecie
+# Gather long format for outlier detection
+long_data <- pivot_longer(Stats_numeric, cols = -Subspecie, names_to = "Variable", values_to = "Value")
+# Detect outliers using IQR
+outliers <- long_data %>%
+  group_by(Subspecie, Variable) %>%
+  mutate(Q1 = quantile(Value, 0.25, na.rm = TRUE),
+         Q3 = quantile(Value, 0.75, na.rm = TRUE),
+         IQR = Q3 - Q1,
+         Lower = Q1 - 1.5 * IQR,
+         Upper = Q3 + 1.5 * IQR,
+         Outlier = Value < Lower | Value > Upper) %>%
+  filter(Outlier == TRUE)
+# Print detected outliers
+print(outliers)
+# Create output folder if it doesn't exist
+if (!dir.exists("Result")) dir.create("Result")
+# Plot boxplots with outliers
+p <- ggplot(long_data, aes(x = Subspecie, y = Value, fill = Subspecie)) +
+  geom_boxplot(outlier.colour = "red", outlier.shape = 8) +
+  facet_wrap(~Variable, scales = "free", ncol = 3) +
+  theme_minimal() +
+  theme(strip.text = element_text(face = "bold"),
+        axis.text.x = element_text(angle = 45, hjust = 1)) +
+  labs(title = "Outliers boxplot for motif D", y = "Value", x = "Subspecie")
+# Save the plot
+ggsave(filename = "Outliers for motif D.jpg", plot = p,
+       width = 12, height = 10, dpi = 600, device = "jpg")
