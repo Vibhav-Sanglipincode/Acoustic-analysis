@@ -1,0 +1,115 @@
+# --------------------------------------------------
+# Install & Load Required Packages
+# --------------------------------------------------
+if (!requireNamespace("viridis", quietly = TRUE)) install.packages("viridis")
+if (!requireNamespace("ggrepel", quietly = TRUE)) install.packages("ggrepel")
+if (!requireNamespace("ggplot2", quietly = TRUE)) install.packages("ggplot2")
+if (!requireNamespace("dplyr", quietly = TRUE)) install.packages("dplyr")
+
+library(ggplot2)
+library(dplyr)
+library(viridis)
+library(ggrepel)
+
+# --------------------------------------------------
+# Set Working Directory and Load Data
+# --------------------------------------------------
+setwd("C:/Users/vibha/OneDrive/Desktop/Final plots/Motif A")  # Change path as needed
+df <- read.csv("C:/Users/vibha/Downloads/Motif A.csv")
+
+# --------------------------------------------------
+# Data Selection and Cleaning
+# --------------------------------------------------
+selected_columns <- c("Highfreq", "BW90", "Dur90", 
+                      "Freq5", "Freq95", "Centerfreq", "Deltafreq", "Lowfreq", 
+                      "Subspecie", "Peakfreq")
+df_selected <- df %>% select(all_of(selected_columns))
+df_selected$Subspecie <- as.factor(df_selected$Subspecie)
+
+# Convert columns to numeric safely and remove problematic rows
+pca_raw <- df_selected %>% select(-Subspecie)
+pca_raw <- data.frame(lapply(pca_raw, function(x) suppressWarnings(as.numeric(as.character(x)))))
+grouping <- df_selected$Subspecie
+df_cleaned <- cbind(pca_raw, Subspecie = grouping)
+df_cleaned <- df_cleaned[complete.cases(df_cleaned), ]
+df_cleaned <- df_cleaned[!apply(df_cleaned[, -ncol(df_cleaned)], 1, function(x) any(is.infinite(x))), ]
+
+pca_data <- df_cleaned[, -ncol(df_cleaned)]
+subspecies_clean <- df_cleaned$Subspecie
+
+# --------------------------------------------------
+# PCA Calculation
+# --------------------------------------------------
+pca_result <- prcomp(pca_data, center = TRUE, scale. = TRUE)
+pca_df <- data.frame(pca_result$x, Subspecie = subspecies_clean)
+
+# --------------------------------------------------
+# Loadings and Label Preparation
+# --------------------------------------------------
+loadings <- as.data.frame(pca_result$rotation[, 1:2])
+loadings$Variable <- rownames(loadings)
+loadings$PC1 <- loadings$PC1 * 2  # scale loadings for visibility
+loadings$PC2 <- loadings$PC2 * 2
+
+label_df <- pca_df %>%
+  filter(Subspecie %in% c("malabaricum", "radiatum")) %>%
+  group_by(Subspecie) %>%
+  summarise(PC1 = mean(PC1), PC2 = mean(PC2), .groups = "drop")
+
+# --------------------------------------------------
+# Add Variance Explained to Axis Labels
+# --------------------------------------------------
+# Calculate % variance explained by PC1 and PC2
+variance_explained <- summary(pca_result)$importance[2, 1:2] * 100
+pc1_var <- round(variance_explained[1], 1)
+pc2_var <- round(variance_explained[2], 1)
+
+# Update PCA plot with variance explained in axis labels
+pca_plot <- ggplot(pca_df, aes(x = PC1, y = PC2, color = Subspecie)) +
+  geom_point(size = 0.8, alpha = 0.7) +
+  stat_ellipse(level = 0.5, size = 1) +
+  scale_color_viridis_d() +
+  theme_minimal() +
+  labs(title = "PCA of Acoustic Data for Motif A",
+       x = paste0("PC1 (", pc1_var, "% variance)"),
+       y = paste0("PC2 (", pc2_var, "% variance)")) +
+  geom_segment(data = loadings, aes(x = 0, y = 0, xend = PC1, yend = PC2),
+               arrow = arrow(length = unit(0.2, "cm")), color = "black") +
+  geom_text_repel(data = loadings, aes(x = PC1, y = PC2, label = Variable),
+                  size = 4, color = "black", max.overlaps = Inf) +
+  geom_text_repel(data = label_df, aes(x = PC1, y = PC2, label = Subspecie),
+                  size = 5, fontface = "bold", color = "red", max.overlaps = Inf) +
+  xlim(-8, 8) +
+  ylim(-2.5, 2.5)
+
+
+# --------------------------------------------------
+# Save and Show Plot
+# --------------------------------------------------
+ggsave("PCA_Plot_for Motif A.jpeg", plot = pca_plot, width = 8, height = 6, dpi = 300)
+write.csv(pca_df, "PCA_Results.csv", row.names = FALSE)
+print(pca_plot)
+
+# --------------------------------------------------
+# Bar Plot of Variable Contributions to PC1 and PC2
+# --------------------------------------------------
+
+# Calculate squared loadings (contributions)
+loadings_contrib <- as.data.frame(pca_result$rotation[, 1:2]^2)
+loadings_contrib$Variable <- rownames(loadings_contrib)
+
+# Convert to long format for plotting
+library(tidyr)
+loadings_long <- loadings_contrib %>%
+  pivot_longer(cols = c(PC1, PC2), names_to = "PrincipalComponent", values_to = "Contribution")
+
+# Bar plot
+ggplot(loadings_long, aes(x = reorder(Variable, -Contribution), y = Contribution, fill = PrincipalComponent)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  scale_fill_viridis_d() +
+  labs(title = "Contribution of Each Variable to PC1 and PC2",
+       x = "Variable",
+       y = "Contribution (Squared Loadings)") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
