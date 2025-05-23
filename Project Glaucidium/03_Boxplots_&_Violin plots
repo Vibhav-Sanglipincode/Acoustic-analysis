@@ -1,0 +1,94 @@
+This will allow to create the box plots and the pca according to the max impact parameters on note level and motif level.
+require(gridExtra)
+
+```{r}
+library(dplyr)
+library(ggstatsplot)
+library(ggplot2)
+library(ggsci)
+library(gridExtra)
+
+data <- read.csv("C:/Users/vibha/Downloads/Glaucidium - Note type B.csv")
+str(data)
+```
+
+```{r}
+#note-level-violin-plots
+
+ggbetweenstats(data = data, x = Sub_specie, y = Begintime, xlab = "Sub specie", ylab = "Begin time (s)", package = "ggsci", palette = "default_jco")
+
+#ggbetweenstats(data = data, x = Sub_specie , y = Delta_Freq_Hz_, xlab = "Sub specie", ylab = "End time (s)", package = "ggsci", palette = "default_jco")
+
+ggbetweenstats(data = data, x = Sub_specie, y = Lowfreq, xlab = "Sub specie", ylab = "Low frequency (Hz)", package = "ggsci", palette = "default_jco")
+
+ggbetweenstats(data = data, x = Sub_specie, y = Highfreq, xlab = "Sub specie", ylab = "High frequency (Hz)", package = "ggsci", palette = "default_jco")
+
+ggbetweenstats(data = data, x = Sub_specie, y = Centerfreq, xlab = "Sub specie", ylab = "Center frequency", package = "ggsci", palette = "default_jco")
+
+ggbetweenstats(data = data, x = Sub_specie, y = Freq5, xlab = "Sub specie", ylab = "Frequency 5%", package = "ggsci", palette = "default_jco")
+
+ggbetweenstats(data = data, x = Sub_specie, y = Freq25, xlab = "Sub specie", ylab = "Frequency 25%", package = "ggsci", palette = "default_jco")
+
+ggbetweenstats(data = data, x = Sub_specie, y = Freq75, xlab = "Sub specie", ylab = "Frequency 75%", package = "ggsci", palette = "default_jco")
+
+ggbetweenstats(data = data, x = Sub_specie, y = Freq95, xlab = "Sub specie", ylab = "Frequency 95%", package = "ggsci", palette = "default_jco")
+
+ggbetweenstats(data = data, x = Sub_specie, y = Time5, xlab = "Sub specie", ylab = "Time 5%", package = "ggsci", palette = "default_jco")
+
+ggbetweenstats(data = data, x = Sub_specie, y = Time25, xlab = "Sub specie", ylab = "Time 25%", package = "ggsci", palette = "default_jco")
+
+ggbetweenstats(data = data, x = Sub_specie, y = Time75, xlab = "Sub specie", ylab = "Time 75%", package = "ggsci", palette = "default_jco")
+
+ggbetweenstats(data = data, x = Sub_specie, y = Time95, xlab = "Sub specie", ylab = "Time 95%", package = "ggsci", palette = "default_jco")
+
+ggbetweenstats(data = data, x = Sub_specie, y = Dur50, xlab = "Sub specie", ylab = "Duration 50%", package = "ggsci", palette = "default_jco")
+
+ggbetweenstats(data = data, x = Sub_specie, y = Dur90, xlab = "Sub specie", ylab = "Duration 90%", package = "ggsci", palette = "default_jco")
+
+#ggbetweenstats(data = data, x = Sub_specie, y = Dur, xlab = "Sub specie", ylab = "Duration 100%", package = "ggsci", palette = "default_jco")
+
+ggbetweenstats(data = data, x = Sub_specie, y = Bw50, xlab = "Sub specie", ylab = "Bandwidth 50%", package = "ggsci", palette = "default_jco")
+
+ggbetweenstats(data = data, x = Sub_specie, y = Bw90, xlab = "Sub specie", ylab = "Bandwidth 90%", package = "ggsci", palette = "default_jco")
+
+library(ggplot2)
+
+# Define the directory where plots will be saved
+output_dir <- "C:/Users/vibha/Documents/Jungle owlet/Jungle owlet/Glaucidium radiatum (Jungle owlet)/"
+
+# Ensure the directory exists
+if (!dir.exists(output_dir)) {
+  dir.create(output_dir, recursive = TRUE)
+}
+
+# Define a function to create and save boxplots
+create_and_save_boxplot <- function(data, x_var, y_var, x_label, y_label, file_name) {
+  p <- ggplot(data, aes(x = .data[[x_var]], y = .data[[y_var]])) +
+    stat_boxplot(geom = "errorbar", width = 0.2, color = "black") +  # T-shaped whiskers
+    geom_boxplot(width = 0.6, outlier.color = "red", outlier.size = 2) +
+    geom_jitter(width = 0.2, alpha = 0.5, color = "blue") +
+    labs(x = x_label, y = y_label) +
+    theme_minimal()
+  
+  # Save the plot
+  ggsave(filename = paste0(output_dir, file_name, ".jpeg"), plot = p, width = 10, height = 8, dpi = 300)
+}
+
+# Create and save boxplots for each variable
+create_and_save_boxplot(data, "Sub_specie", "Lowfreq", "Sub specie", "Low frequency (Hz)", "Lowfreq_plot")
+create_and_save_boxplot(data, "Sub_specie", "Highfreq", "Sub specie", "High frequency (Hz)", "Highfreq_plot")
+create_and_save_boxplot(data, "Sub_specie", "Centerfreq", "Sub specie", "Center frequency", "Centerfreq_plot")
+create_and_save_boxplot(data, "Sub_specie", "Freq5", "Sub specie", "Frequency 5%", "Freq5_plot")
+create_and_save_boxplot(data, "Sub_specie", "Freq25", "Sub specie", "Frequency 25%", "Freq25_plot")
+create_and_save_boxplot(data, "Sub_specie", "Freq75", "Sub specie", "Frequency 75%", "Freq75_plot")
+create_and_save_boxplot(data, "Sub_specie", "Freq95", "Sub specie", "Frequency 95%", "Freq95_plot")
+create_and_save_boxplot(data, "Sub_specie", "Time5", "Sub specie", "Time 5%", "Time5_plot")
+create_and_save_boxplot(data, "Sub_specie", "Time25", "Sub specie", "Time 25%", "Time25_plot")
+create_and_save_boxplot(data, "Sub_specie", "Time75", "Sub specie", "Time 75%", "Time75_plot")
+create_and_save_boxplot(data, "Sub_specie", "Time95", "Sub specie", "Time 95%", "Time95_plot")
+create_and_save_boxplot(data, "Sub_specie", "Dur50", "Sub specie", "Duration 50%", "Dur50_plot")
+create_and_save_boxplot(data, "Sub_specie", "Dur90", "Sub specie", "Duration 90%", "Dur90_plot")
+#create_and_save_boxplot(data, "Sub_specie", "Dur", "Sub specie", "Duration 100%", "Dur_plot")  # Commented out as per your original code
+create_and_save_boxplot(data, "Sub_specie", "Bw50", "Sub specie", "Bandwidth 50%", "Bw50_plot")
+create_and_save_boxplot(data, "Sub_specie", "Bw90", "Sub specie", "Bandwidth 90%", "Bw90_plot")
+create_and_save_boxplot(data, "Sub_specie", "Begintime", "Sub specie", "Begin Time (s)", "Begintime_plot")
